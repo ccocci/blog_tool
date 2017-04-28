@@ -92,7 +92,7 @@ public class BlogPostResource {
              subStrings = dateString.split("-");
         }
         else if(dateString.contains(".")) {
-            subStrings = dateString.split(".");
+            subStrings = dateString.split("\\.");
         }
 
         //save entry for day in dayString and entry for month in monthString if entry has a day, a month and a year
