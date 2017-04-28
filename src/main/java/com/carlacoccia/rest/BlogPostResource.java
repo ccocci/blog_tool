@@ -33,7 +33,6 @@ public class BlogPostResource {
     static final String CONTEXT = "/posts";
 
 
-
     /**
      * return a specific blog post
      * @param id The id of the requested blog post.
@@ -74,18 +73,56 @@ public class BlogPostResource {
     @RequestMapping(value = CONTEXT, method = RequestMethod.POST)
     @ResponseStatus(HttpStatus.CREATED)
     public Long createPost(@RequestBody CreateBlogPostObject data){
+
+        DateFormat df = new SimpleDateFormat("dd/MM/yy");
         String dateString = data.getDate();
-        DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
-        Date date=new Date();
-        try {
-            date = df.parse(dateString);
+        String dayString="";
+        String monthString="";
+        String yearString="";
+        String[] subStrings={"","",""};
+
+        /*
+        * Split up date in day, month and year.
+        * three delimiters are allowed: / - .
+        */
+        if(dateString.contains("/")) {
+            subStrings = dateString.split("/");
+        }
+        else if(dateString.contains("-")) {
+             subStrings = dateString.split("-");
+        }
+        else if(dateString.contains(".")) {
+            subStrings = dateString.split(".");
+        }
+
+        //save entry for day in dayString and entry for month in monthString if entry has a day, a month and a year
+        if(subStrings.length==3){
+        dayString = subStrings[0];
+        monthString = subStrings[1];
+        yearString= subStrings[2];
+        }
+        // create regex for invalid day and month respectively
+        String dayWrong = "([3][2-9]|[4-9][0-9]|[0]++|\\W++|\\W+[0-9])";
+        String monthWrong = "([1][3-9]|[2-9][0-9]|[0]++|\\W++|\\W+[0-9])";
+
+
+        //ensure that no invalid day or month is entered
+        if(!dayString.matches(dayWrong)&&!monthString.matches(monthWrong)) {
+            //convert String into format that is accepted by SimpleDateFormat
+            dateString=dayString+"/"+monthString+"/"+yearString;
+            Date date = new Date();
+            try {
+                date = df.parse(dateString);
             } catch (ParseException e) {
-            e.printStackTrace();
-        }  BlogPost blogPost= new BlogPost(data.getTitle(),date , data.getText());
-        blogPostRepository.save(blogPost);
-        Long id= blogPost.getId();
-        logger.debug(id + ": post created.");
-        return id;
+               throw new IllegalArgumentException("Date does not match the format! Please enter your date in the format dd/MM/yy");
+            }
+            BlogPost blogPost = new BlogPost(data.getTitle(), date, data.getText());
+            blogPostRepository.save(blogPost);
+            Long id = blogPost.getId();
+            logger.debug(id + ": post created.");
+            return id;
+        }
+        else{ throw new IllegalArgumentException("Please enter a valid day and month.");}
     }
 
 
@@ -125,7 +162,7 @@ public class BlogPostResource {
 
         public GetBlogPostObject(BlogPost blogpost){
             this.title=blogpost.getTitle();
-            DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+            DateFormat df = new SimpleDateFormat("dd/MM/yyyy");
             this.date=df.format(blogpost.getDate());
             this.text=blogpost.getText();
         }
